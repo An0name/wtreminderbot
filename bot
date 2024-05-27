@@ -1,0 +1,36 @@
+from telegram import Update, Bot
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
+from datetime import time, datetime
+import pytz
+
+# Вставьте ваш токен
+TOKEN = '6841536034:AAEDoEozG5SBL6LMMgThKsVo9NIFjPFf-KY'
+
+# Создайте экземпляр бота и диспетчера
+bot = Bot(token=TOKEN)
+updater = Updater(token=TOKEN, use_context=True)
+dispatcher = updater.dispatcher
+
+# Задайте таймзону (замените на вашу таймзону)
+tz = pytz.timezone('Europe/Moscow')
+
+# Функция старта
+def start(update: Update, context: CallbackContext) -> None:
+    context.job_queue.run_daily(reminder, time(hour=8, minute=0, tzinfo=tz), context=update.message.chat_id, name=str(update.message.chat_id))
+    update.message.reply_text('Бот запущен. Буду напоминать вам пить воду!')
+
+# Функция напоминания
+def reminder(context: CallbackContext) -> None:
+    job = context.job
+    now = datetime.now(tz).time()
+    # Установите период времени, когда напоминания отключены
+    if not (time(22, 0) <= now <= time(7, 0)):
+        context.bot.send_message(job.context, text='Не забудьте выпить воды!')
+
+# Обработчики команд
+start_handler = CommandHandler('start', start)
+dispatcher.add_handler(start_handler)
+
+# Запуск бота
+updater.start_polling()
+updater.idle()
